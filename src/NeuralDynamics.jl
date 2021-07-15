@@ -1,5 +1,9 @@
 module NeuralDynamics
 
-# Write your package code here.
+using Random
+
+include("ising2D.jl")
+
+export simulateIsing2D
 
 end
