@@ -6,7 +6,7 @@
 [![Coverage](https://coveralls.io/repos/github/neuro-myoung/NeuralDynamics.jl/badge.svg?branch=master)](https://coveralls.io/github/neuro-myoung/NeuralDynamics.jl?branch=master)
 
 ## Description
-A small Julia package developed for a neuronal bifurcations minicourse mostly geared towards creating custom plots and running numerical simulations. Credit for the original course and Python code upon which this is based content goes to [@nalewkoz](https://github.com/nalewkoz).
+A small Julia package developed for a neuronal bifurcations minicourse mostly geared towards creating custom plots and running numerical simulations. Credit for the original course and Python code upon which this is based goes to [@nalewkoz](https://github.com/nalewkoz).
 
 ## Prerequisites
 
