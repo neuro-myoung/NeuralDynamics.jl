@@ -1,6 +1,6 @@
 module NeuralDynamics
 
-using Random
+using Random, StatsBase
 
 include("ising2D.jl")
 
