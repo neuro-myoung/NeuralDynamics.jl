@@ -6,7 +6,7 @@
 [![Coverage](https://coveralls.io/repos/github/neuro-myoung/NeuralDynamics.jl/badge.svg?branch=master)](https://coveralls.io/github/neuro-myoung/NeuralDynamics.jl?branch=master)
 
 ## Description
-A small package developed for a dynamical systems course for creating custom plots and running numerical simulations.
+A small Julia package developed for a dynamical systems course mostly geared towards creating custom plots and running numerical simulations.
 
 ## Prerequisites
 
