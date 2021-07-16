@@ -8,7 +8,7 @@ function initState(params)
     Output
     array: An Nx x Ny array of initial spins
     """
-    return rand(params().Nx, params().Ny) .> params().M₀
+    return rand(params.Nx, params.Ny) .< (1 + params.M₀)/2
 end
 
 function chooseRandomSpin(xDim, yDim)
@@ -68,14 +68,13 @@ function singleStep!(X, loc, params)
     Output
     array: Modifies the original X based on the Ising model.
     """
-    println("Single step...")
     
     #Metropolis-Hasting (calculate local field)
-    heff = params().h #external field
+    heff = params.h #external field
     
-    for n in getNeighbors(loc, params().Nx, params().Ny)
+    for n in getNeighbors(loc, params.Nx, params.Ny)
         # Global field - NN fields weighted by J 
-        heff = heff - params().J * (-1)^X[n[1], n[2]]
+        heff = heff - params.J * (-1)^X[n[1], n[2]]
     end
     
     # Local energy of the spin
@@ -83,7 +82,7 @@ function singleStep!(X, loc, params)
     
     # Check to see if new state is favored & flip if true
     Δe = -2*e₀
-    if Δe < 0 || rand() < exp(-Δe/params().T)
+    if Δe < 0 || rand() < exp(-Δe/params.T)
         X[loc[1], loc[2]] = !X[loc[1], loc[2]]
     end		
 end
@@ -99,7 +98,7 @@ function magnetization(X, params)
     Output
     array: A float indicating the net magnetization of the simulation in its current state.
     """
-	return 2 * sum(X) / (params().Nx * params().Ny) -1 
+	return 2 * sum(X) / (params.Nx * params.Ny) -1 
 end
 
 
@@ -116,25 +115,25 @@ function simulateIsing2D(params, tsteps = 10000, Nhist = 100)
     Mhist: A 1D array of magnetization states for the system at each iteration of the simulation.
     XHist: A 3D array of snapshots collected during the simulation.
     """
-	snapshots = 1:Int64(tsteps/Nhist)+1:tsteps
-	println(length(snapshots))
+    println("Running...")
+	snapshots = 1:Int64(tsteps/Nhist):tsteps+Int64(tsteps/Nhist)
 	snapshotInd = 1
 		
 	# Magnetization history
 	Mhist = []
 		
 	X = initState(params)
-	Xhist = fill(0, (Nhist, params().Nx, params().Ny))
+	Xhist = fill(0, (Nhist, params.Nx, params.Ny))
 	thisT = []
 	push!(Mhist, magnetization(X, params))
 		
 	for t in 1:tsteps
-		if snapshots[snapshotInd] == t+1
+		if snapshots[snapshotInd] == t
 			Xhist[snapshotInd,:,:] = X
 			push!(thisT, t)
 			snapshotInd += 1
 		end
-		singleStep!(X, chooseRandomSpin(params().Nx, params().Ny), params)
+		singleStep!(X, chooseRandomSpin(params.Nx, params.Ny), params)
 		push!(Mhist, magnetization(X,params))
 	end
 		

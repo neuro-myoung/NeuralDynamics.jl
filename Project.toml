@@ -1,7 +1,7 @@
 name = "NeuralDynamics"
 uuid = "4a0b20f9-fc5a-4814-8f96-b33a141a51c8"
 authors = ["Michael Young"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"

@@ -4,6 +4,6 @@ using Random, StatsBase
 
 include("ising2D.jl")
 
-export simulateIsing2D
+export simulateIsing2D, plotField1D
 
 end
