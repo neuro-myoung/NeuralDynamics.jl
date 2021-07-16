@@ -33,11 +33,19 @@ using NeuralDynamics
 For now here are some examples of plots made with this package:
 
 ### Bifurcation Diagrams
+ODEs and corresponding Bifurcation diagrams on left and right respectively. Stable fixed-points are in blue and unstable fixed-points are in red.
+
+<img src="https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/f9b9d48dbe679c9e99e6ddc4023e7230a40fa57e/assets/difEqs.svg" alt="Ising simulation output" width="300"/>
+
+<img src="https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/f9b9d48dbe679c9e99e6ddc4023e7230a40fa57e/assets/bifurcationPlots.svg" alt="Ising simulation output" width="300"/>
 
 ### Ising Simulation
 ```Mhist, X = simulateIsing2D(params, 2000000);```
 
 Display the results of the simulation:
+
+<img src="https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/Ising1.png" alt="Ising simulation output" width="400"/>
+<img src="https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/anim_fps15.gif" alt="Ising simulation gif" width="300"/>
 
 
 
