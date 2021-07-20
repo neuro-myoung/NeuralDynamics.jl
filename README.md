@@ -34,12 +34,27 @@ For now here are some examples of plots made with this package:
 
 ### Analyzing Bifurcations
 
+Detailed examples with interactive plotting available in the Pluto notebook.
+
 ODEs with Vector Fields             |  Bifurcation Diagrams
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/f9b9d48dbe679c9e99e6ddc4023e7230a40fa57e/assets/difEqs.svg) | ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/f9b9d48dbe679c9e99e6ddc4023e7230a40fa57e/assets/bifurcationPlots.svg)
 
 ### Ising Simulation
-```Mhist, X = simulateIsing2D(params, 2000000);```
+```
+Tc = 2/log(1+sqrt(2));
+	
+mutable struct Parameters
+	Nx::Int32      # nrows
+	Ny::Int32      # ncols
+	J::Float64     # interaction strength (nearest neighbors)
+	T::Float64     # temperature (kb = 1)
+	h::Float64     # external field
+	M₀::Float64    # initial magnetization
+end
+	
+params = Parameters(150, 150, 1, Tc/2.5, 0, 0.5)
+Mhist, X = simulateIsing2D(params, 2000000);```
 
 Display the results of the simulation:
 Simulation Results             |  Simulation Animation
