@@ -54,7 +54,8 @@ mutable struct Parameters
 end
 	
 params = Parameters(150, 150, 1, Tc/2.5, 0, 0.5)
-Mhist, X = simulateIsing2D(params, 2000000);```
+Mhist, X = simulateIsing2D(params, 2000000);
+```
 
 Display the results of the simulation:
 Simulation Results             |  Simulation Animation
