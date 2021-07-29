@@ -49,14 +49,14 @@ begin
 		M₀::Float64    # initial magnetization
 	end
 	
-	params = Parameters(150, 150, 1, Tc/2.5, 0, 0.5)
+	params = Parameters(200, 200, 1, Tc/3, 0, 0.5)
 end
 
 # ╔═╡ e63df9ed-6153-4e5b-980c-f7a94b00950e
 md"### Run Simulation"
 
 # ╔═╡ 9d2bf487-e0cf-4538-af8c-53d7e2313a1a
-Mhist, X = simulateIsing2D(params, 2000000);
+Mhist, X = simulateIsing2D(params, 3000000);
 
 # ╔═╡ 62d15b1c-3a23-469d-a6d6-f2f76ecaddde
 md"### Display Results"
@@ -104,12 +104,12 @@ begin
 		
 	for i in 1:length(TArr)
 		params.T = TArr[i]	
-		mHist2, X2 = simulateIsing2D(params, 100000)
+		mHist2, X2 = simulateIsing2D(params, 3000000)
 		mArr[i] = mean(mHist2[end-10000:end])
 	end
 	
-	scatter(TArr, mArr, xlab="Temperature (kB)", ylab="Magnetization", legend=false)
-	plot!([TArr[1], TArr[end]], [0, 0], color=:black, linetype=:dashed)
+	scatter(TArr, mArr, xlab="Temperature (kB)", ylab="Magnetization", legend=false, linestyle=:dash)
+	plot!([TArr[1], TArr[end]], [0, 0], color=:black)
 	scatter!([Tc],[0], color=:red, markersize=8)
 
 end
