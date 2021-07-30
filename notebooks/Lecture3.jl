@@ -4,6 +4,15 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ 79cb0280-efec-11eb-2d78-257120747e5f
 begin
 	import Pkg
@@ -33,6 +42,24 @@ $G(u,w) = b_{0}+b_{1}u-w$
 
 Note that both equations are linear in $w$. The only nonlinearity is pretty simple: a cubic term in $u$.
 
+## Nullclines
+
+Here, we will plot nullclines.
+
+- The u-nullcline is the set of points defined by the equation $\dot{u} = 0$.
+- The w-nullcline is the set of points defined by the equation $\dot{w} = 0$.
+
+Note that the equations for the nullclines can easily be solved for $w$. Thus, we calculate $w$ given $u$ on a given nullcline.
+
+## Exercise
+
+Plot nullclines for different values of $I$. Adjust the other parameters to see how they affect the nullclines and answer the following questions:
+
+1. What kind of objects are nullclines geometrically?
+The nullclines of u and w are curves in the space u, w showing where, in this plane, $\dot{u}$ and $\dot{w}$ are 0 respectively in this case.
+2. What happens at the intersections of two nullclines?
+The intersections define points where both slopes are zero and correspond with fixed points.
+
 """
 
 # ╔═╡ 48321fac-f274-4205-b841-6006160e1e5e
@@ -53,13 +80,12 @@ begin
 	end
 	
 	## Initialize Model
-	function initializeModel(tau1, tau2, b0, b1, R, I, t, dt)
+	function initializeModel(tau1, tau2, b0, b1, R, I)
 		modelInit = modelParameters(tau1, tau2, b0, b1, R, I)
-		simInit = simParameters(t, dt)
-		return  (modelInit, simInit)
+		return modelInit
 	end
 	
-	## FitzHughNagumo model
+	## FitzHughNagumo model equations
 	@. function nullclinewu(u, R, I)
 		return u - (u^3)/3 + R*I
 	end
@@ -68,27 +94,101 @@ begin
 		return b0 + b1 * u
 	end
 	
-	function FitzHughNagumo(u;tau1=1, tau2=2, b0=0.9, b1=1.1, R=1, I=0, t=100, dt=0.1)
-		mdl, sim = initializeModel(tau1, tau2, b0, b1, R, I, t, dt)
+	@. function dudt(u, w, tau1, R, I)
+		return (u - (u^3)/3 - w + R*I)/tau1
+	end
+	
+	@. function dwdt(u, w, b0, b1, tau2)
+		return (b0 + b1*u - w)/tau2
+	end
+	
+	## FitzHughNagumo model nullclines
+	function fhnNullclines(u; tau1, tau2, b0, b1, R, I)
 		
-		wuNull = nullclinewu(u, mdl.R, mdl.I)
-		wwNull = nullclineww(u, mdl.b0, mdl.b1)
+		wuNull = nullclinewu(u, R, I)
+		wwNull = nullclineww(u, b0, b1)
 		
-		return wuNull, wwNull
+		return (wuNull, wwNull)
+	end
+	
+	## FitzHughNagumo vector fields
+	function fhnVectorFields(u, w, scale; tau1=1, tau2=2, b0=0.9, b1=1.1, R=1, I=0)
+		
+		du = dudt(u, w, tau1, R, I) * scale
+		dw = dwdt(u, w, b0, b1, tau2) * scale
+		
+		return (du, dw)
+	end
+	
+	function FitzHughNagumo(u; tau1=1, tau2=2, b0=0.9, b1=1.1, R=1, I=0)
+		mdl = initializeModel(tau1, tau2, b0, b1, R, I)
+		nullclines = fhnNullclines(u, tau1, tau2, b0, b1, R, I)
+		
+		return nullclines
 	end
 end
 
+# ╔═╡ 3412d5a3-4f03-467f-8d79-37abd0447c3b
+md"""
+## Set Parameters
+tau1: $(@bind tau1 Slider(0.1:0.1:10, default=1, show_value=true))
+tau2: $(@bind tau2 Slider(0.1:0.5:100, default=2, show_value=true))
+
+
+b0: $(@bind b0 Slider(0.1:0.1:10, default=0.9, show_value=true))
+b1: $(@bind b1 Slider(0.1:0.1:10, default=1.1, show_value=true))
+
+R: $(@bind R Slider(0:0.5:10, default=1, show_value=true))
+I: $(@bind I Slider(0:0.5:50, default=0, show_value=true))
+
+"""
+
 # ╔═╡ c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
 begin
-	uArr = -2.5:0.01:2.5
-	wuNull, wwNull = FitzHughNagumo(uArr)
+	uArr = -2.5:0.25:2.5
+	nullclines = fhnNullclines(uArr,tau1=tau1, tau2=tau2, b0=b0, b1=b1, R=R, I=I)
 	
-	plot(uArr, wuNull, color=:red, legend=true, label="u-nullcline")
-	plot!(uArr, wwNull, color=:blue, label="w-nullcline")
+	plot(uArr, nullclines[1], color=:red, legend=true, 
+		label="u-nullcline", xlab = "u", ylab="w")
+	plot!(uArr, nullclines[2], color=:blue, label="w-nullcline")
+end
+
+# ╔═╡ 2a6a73e3-780a-4a11-9711-2b243f39f6e2
+md"""
+## Vector field and trajectories
+
+The values of $u(t)$ and $w(t)$ at each time point $t$ correspond to a single point in the phase plane, with coordinates $(u(t), w(t))$. Therefore, the time-dependent trajectory of the system can be described as a continuous curve in the phase plane, and the tangent vector to the trajectory, which is defined as the vector $(\frac{du(t)}{dt}, \frac{dw(t)}{dt})$, indicates the direction towards which the activity is evolving and how fast is the activity changing along each axis. In fact, for each point $(u, w)$ in the phase plane, we can compute the tangent vector $(\frac{du}{dt}, \frac{dw}{dt})$, which indicates the behavior of the system when it traverses that point.
+
+The map of tangent vectors in the phase plane is called **vector field**. The behavior of any trajectory in the phase plane is determined by i) the initial conditions $(u(0), w(0))$, and ii) the vector field $(\dot{u}, \dot{w})$.
+
+In general, the value of the vector field at a particular point in the phase plane is represented by an arrow. The orientation and the size of the arrow reflect the direction and the norm of the vector, respectively.
+
+## Exercise
+
+Now let's plot and analyze the vector field and a sample trajectory.
+1. Implement the function that calculates $\dot{u}=\frac{du}{dt}$ and $\dot{w}=\frac{dw}{dt}$.
+2. Change the initial conditions (focus on $u$) for $I=0$. What kind of stimulation protocol does this correspond to? Do we observe threshold behavior here? Are action potentials stereotypical?
+3. Now change $I$. Can we define a threshold? What kind of bifurcation does the system exhibit?
+"""
+
+# ╔═╡ 350e9e4c-9b64-470d-aa2c-af68785e7f19
+begin
+	uSparse = collect(-2.5:0.5:2.5)
+	uGrid = uSparse' .* ones(length(uSparse))
+	wGrid = uSparse .* ones(length(uSparse))'
+	deriv = fhnVectorFields.(uGrid, wGrid, 0.1, tau1=tau1, 
+								tau2=tau2, b0=0.9, b1=1.1, R=1, I=0)
+	plot(uArr, nullclines[1], color=:red, legend=true, 
+		label="u-nullcline", xlab = "u", ylab="w")
+	plot!(uArr, nullclines[2], color=:blue, label="w-nullcline")
+	quiver!(uGrid, wGrid, quiver=deriv[:], color=:purple)
 end
 
 # ╔═╡ Cell order:
 # ╠═79cb0280-efec-11eb-2d78-257120747e5f
 # ╟─a967ce00-b71a-40b0-a394-fc912f3aa235
 # ╠═48321fac-f274-4205-b841-6006160e1e5e
-# ╠═c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
+# ╟─3412d5a3-4f03-467f-8d79-37abd0447c3b
+# ╟─c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
+# ╟─2a6a73e3-780a-4a11-9711-2b243f39f6e2
+# ╠═350e9e4c-9b64-470d-aa2c-af68785e7f19
