@@ -183,8 +183,8 @@ r: $(r)
 
 # ╔═╡ 53389946-dda5-427c-8524-d5e8fb690161
 begin
-	test = rk1(f4, 0, x₀, r, h, 1000)
-	test2 = rk2(f4, 0, x₀, r, h, 1000)
+	test = rk1(f4, 0, x₀, h, 1000, r=r)
+	test2 = rk2(f4, 0, x₀, h, 1000, r=r)
 	@df test plot(:t, :x, xlab="t", ylab="x", label="Euler")
 	@df test2 plot!(:t, :x, xlab="t", ylab="x", label="Improved Euler", 
 		linestyle=:dash, color=:purple)
