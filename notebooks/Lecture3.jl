@@ -17,7 +17,7 @@ end
 begin
 	import Pkg
 	Pkg.activate("../environments/v1.6")
-	using Plots, PlutoUI, NeuralDynamics, Statistics
+	using Plots, PlutoUI, NeuralDynamics, Statistics, Parameters
 	TableOfContents()
 end
 
@@ -62,94 +62,26 @@ The intersections define points where both slopes are zero and correspond with f
 
 """
 
-# ╔═╡ 48321fac-f274-4205-b841-6006160e1e5e
-begin
-	## Construct parameter objects
-	mutable struct modelParameters
-		tau1::Float64      # tau u
-		tau2::Float64      # tau w
-		b0::Float64      	   
-		b1::Float64
-		R::Float64
-		I::Float64     	   # input current
-	end
-		
-	mutable struct simParameters
-		t::Float64         # simulation length
-		dt::Float64        # simulation step
-	end
-	
-	## Initialize Model
-	function initializeModel(tau1, tau2, b0, b1, R, I)
-		modelInit = modelParameters(tau1, tau2, b0, b1, R, I)
-		return modelInit
-	end
-	
-	## FitzHughNagumo model equations
-	@. function nullclinewu(u, R, I)
-		return u - (u^3)/3 + R*I
-	end
-	
-	@. function nullclineww(u, b0, b1)
-		return b0 + b1 * u
-	end
-	
-	@. function dudt(u, w, tau1, R, I)
-		return (u - (u^3)/3 - w + R*I)/tau1
-	end
-	
-	@. function dwdt(u, w, b0, b1, tau2)
-		return (b0 + b1*u - w)/tau2
-	end
-	
-	## FitzHughNagumo model nullclines
-	function fhnNullclines(u; tau1, tau2, b0, b1, R, I)
-		
-		wuNull = nullclinewu(u, R, I)
-		wwNull = nullclineww(u, b0, b1)
-		
-		return (wuNull, wwNull)
-	end
-	
-	## FitzHughNagumo vector fields
-	function fhnVectorFields(u, w, scale; tau1=1, tau2=2, b0=0.9, b1=1.1, R=1, I=0)
-		
-		du = dudt(u, w, tau1, R, I) * scale
-		dw = dwdt(u, w, b0, b1, tau2) * scale
-		
-		return (du, dw)
-	end
-	
-	function FitzHughNagumo(u; tau1=1, tau2=2, b0=0.9, b1=1.1, R=1, I=0)
-		mdl = initializeModel(tau1, tau2, b0, b1, R, I)
-		nullclines = fhnNullclines(u, tau1, tau2, b0, b1, R, I)
-		
-		return nullclines
-	end
-end
-
 # ╔═╡ 3412d5a3-4f03-467f-8d79-37abd0447c3b
 md"""
-tau1: $(@bind tau1 Slider(0.1:0.1:10, default=1, show_value=true))
-tau2: $(@bind tau2 Slider(0.1:0.5:100, default=2, show_value=true))
+tau1: $(@bind tau1a Slider(0.1:0.1:10, default=1, show_value=true))
+tau2: $(@bind tau2a Slider(0.1:0.5:100, default=2, show_value=true))
 
 
-b0: $(@bind b0 Slider(0.1:0.1:10, default=0.9, show_value=true))
-b1: $(@bind b1 Slider(0.1:0.1:10, default=1.1, show_value=true))
+b0: $(@bind b0a Slider(0.1:0.1:10, default=0.9, show_value=true))
+b1: $(@bind b1a Slider(0.1:0.1:10, default=1.1, show_value=true))
 
-R: $(@bind R Slider(0:0.5:10, default=1, show_value=true))
-I: $(@bind I Slider(0:0.5:50, default=0, show_value=true))
+R: $(@bind Ra Slider(0:0.5:10, default=1, show_value=true))
+I: $(@bind Ia Slider(0:0.5:50, default=0, show_value=true))
 
 """
 
 # ╔═╡ c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
 begin
-	uArr = -2.5:0.25:2.5
-	nullclines = fhnNullclines(uArr,tau1=tau1, tau2=tau2, b0=b0, b1=b1, R=R, I=I)
-	
-	plot(uArr, nullclines[1], color=:red, legend=true, 
-		label="u-nullcline", xlab = "u", ylab="w")
-	plot!(uArr, nullclines[2], color=:blue, label="w-nullcline")
+	uArr = -2.5:0.1:2.5
+	nrn1 = FitzHughNagumo(uArr; tau1=tau1a, tau2=tau2a, b0=b0a, b1=b1a, R=Ra, I=Ia)
+	plotNullclines(nrn1; labels = ("u-nullcline","w-nullcline"), xlab="u", ylab="w",
+					colors=[:red, :blue])
 end
 
 # ╔═╡ 2a6a73e3-780a-4a11-9711-2b243f39f6e2
@@ -186,25 +118,17 @@ I: $(@bind Ib Slider(0:0.5:50, default=0, show_value=true))
 
 # ╔═╡ 350e9e4c-9b64-470d-aa2c-af68785e7f19
 begin
-	uSparse = collect(-2.5:0.5:2.5)
-	uGrid = uSparse' .* ones(length(uSparse))
-	wGrid = uSparse .* ones(length(uSparse))'
-	nullclinesb = fhnNullclines(uArr,tau1=tau1b, tau2=tau2b, b0=b0b, b1=b1b, R=Rb, I=Ib)
-
-	deriv = fhnVectorFields.(uGrid, wGrid, 0.08, tau1=tau1b, 
-								tau2=tau2b, b0=b0b, b1=b1b, R=Rb, I=Ib)
-	plot(uArr, nullclinesb[1], color=:red, legend=true, 
-		label="u-nullcline", xlab = "u", ylab="w")
-	plot!(uArr, nullclinesb[2], color=:blue, label="w-nullcline")
-	quiver!(uGrid, wGrid, quiver=deriv[:], color=:teal)
+	nrn2 = FitzHughNagumo(uArr; tau1=tau1b, tau2=tau2b, b0=b0b, b1=b1b, R=Rb, I=Ib)
+	plotNullclines(nrn2; labels = ("u-nullcline","w-nullcline"), xlab="u", ylab="w",
+					colors=[:red, :blue])
+	plotVectorFields!(nrn2; color="teal")
 end
 
 # ╔═╡ Cell order:
 # ╠═79cb0280-efec-11eb-2d78-257120747e5f
 # ╟─a967ce00-b71a-40b0-a394-fc912f3aa235
-# ╟─48321fac-f274-4205-b841-6006160e1e5e
 # ╟─3412d5a3-4f03-467f-8d79-37abd0447c3b
 # ╟─c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
 # ╟─2a6a73e3-780a-4a11-9711-2b243f39f6e2
 # ╟─740a25ad-7fcf-4404-a572-c4d6b3a5a749
-# ╠═350e9e4c-9b64-470d-aa2c-af68785e7f19
+# ╟─350e9e4c-9b64-470d-aa2c-af68785e7f19
