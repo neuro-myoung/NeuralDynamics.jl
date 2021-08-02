@@ -183,8 +183,14 @@ r: $(r)
 
 # ╔═╡ 53389946-dda5-427c-8524-d5e8fb690161
 begin
-	test = rk1(f4, 0, x₀, h, 1000, r=r)
-	test2 = rk2(f4, 0, x₀, h, 1000, r=r)
+	mutable struct modelParameters
+		r::Float64
+	end
+	
+	params = modelParameters(r)
+	
+	test = rk1(f4, 0, h, 1000, params.r, x₀)
+	test2 = rk2(f4, 0, h, 1000, params.r, x₀)
 	@df test plot(:t, :x, xlab="t", ylab="x", label="Euler")
 	@df test2 plot!(:t, :x, xlab="t", ylab="x", label="Improved Euler", 
 		linestyle=:dash, color=:purple)
@@ -223,5 +229,5 @@ An adaptive algorithm that takes into account the local slope (second derivative
 # ╟─77901a18-b6a3-430c-adfe-1fd3d4200398
 # ╟─c7df73ba-3f9e-4750-9b0a-b25931b815b5
 # ╟─5a7e7a81-6a27-4445-ba16-76e721944334
-# ╠═53389946-dda5-427c-8524-d5e8fb690161
+# ╟─53389946-dda5-427c-8524-d5e8fb690161
 # ╟─254523da-ba44-4fe2-87f6-147b48f0edd9

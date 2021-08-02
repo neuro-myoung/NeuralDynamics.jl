@@ -8,6 +8,7 @@ include("plotFields.jl")
 include("rungeKatta.jl")
 include("FitzHughNagumo.jl")
 include("neuronModels.jl")
+include("activationFunctions.jl")
 
 @with_kw mutable struct neuronModel
     u::Vector{Float64}
@@ -20,5 +21,6 @@ export simulateIsing2D
 export bifurcationDiagram, addBifurcation!, plotField1D
 export rk1, rk2
 export plotNullclines, plotVectorFields!, FitzHughNagumo, neuronModel
+export sigmoid
 
 end
