@@ -71,7 +71,12 @@ Currently, only two models are implemented:
 - WilsonCowan
 
 #### FitzHughNagumo Phase Plane
-![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/Ising1.png) | ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/anim_fps15.gif)
+![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/6042a30b1e5d905dc830c2fd47834dfe63574396/assets/fhn_phaseplane.svg)
+
+#### Wilson-Cowan Model
+Phase Plane             |  Simulation
+:-------------------------:|:-------------------------:
+![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/6042a30b1e5d905dc830c2fd47834dfe63574396/assets/wilsoncowan_phase.png) | ![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/6042a30b1e5d905dc830c2fd47834dfe63574396/assets/wilsoncowan_activity.svg)
 
 ## Contributing
 To contribute to **NeuralDynamics.jl**, follow these steps:
