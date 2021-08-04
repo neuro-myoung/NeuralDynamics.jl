@@ -62,7 +62,16 @@ Simulation Results             |  Simulation Animation
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/Ising1.png) | ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/anim_fps15.gif)
 
+### Simulate Neurons or networks of neurons
 
+Build neuron or network models and study them in the phase plane or simulate their activity.
+
+Currently, only two models are implemented:
+- FitzHughNagumo
+- WilsonCowan
+
+#### FitzHughNagumo Phase Plane
+![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/Ising1.png) | ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/anim_fps15.gif)
 
 ## Contributing
 To contribute to **NeuralDynamics.jl**, follow these steps:

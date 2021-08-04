@@ -17,7 +17,7 @@ end
 begin
 	import Pkg
 	Pkg.activate("../environments/v1.6")
-	using Plots, PlutoUI, NeuralDynamics, Roots, NLsolve, LinearAlgebra, Random
+	using Plots, PlutoUI, NeuralDynamics, Random
 	TableOfContents()
 end
 
@@ -198,28 +198,6 @@ $\frac{dr_I}{dt}=[-r_I+F_I(w_{IE}r_E-w_{II}r_I+I_I^{ext};a_I,\theta_I)]\frac{1}{
 # ╔═╡ ac21c7c6-69ad-4975-af2b-7a0a4b44034f
 begin
 	
-	function plotTrajectory!(x, y ;color=:red, label="")
-		plot!(x, y, linewidth=2, color=color, label=label)
-		scatter!([x[1]], [y[1]], color=color, markersize=10, markerstrokewidth=0, label=:none)
-	end
-	
-	function plotTrajectories!(xArray, yArray, params;color=:gray, label="")
-		
-		for i in xArray
-			for j in yArray
-				rₑTemp, rᵢTemp = simWilsonCowan(0:0.1:50, params, (i,j))
-				
-				if i == minimum(xArray) && j == minimum(yArray)
-					plot!(rₑTemp, rᵢTemp, color=color, 
-						label=label, alpha=0.8)
-				else
-					plot!(rₑTemp, rᵢTemp, color=color, 
-						label=:none, alpha=0.8)
-				end
-			end
-		end
-	end
-
 	## Get fields
 	eiArr = 0:0.05:1
 	fields = getVectorFields(eiArr, "WC", params)
@@ -265,46 +243,12 @@ From the above nullclines, we notice that the system features three fixed points
 In this exercise, you will use the function ` insert here ` to find each of the fixed points by varying the initial values. Note that you can choose the values near the intersections of the nullclines as the intiial values to calculate the fixed points.
 """
 
-# ╔═╡ 0dffa5c8-f472-437a-99a3-784970e87ccf
-begin
-	## Helper Functions
-	
-	@. function drₑ(rₑ, rᵢ, wₑₑ, wₑᵢ, aₑ, θₑ; I=0) 
-		return (-rₑ + sigmoid(wₑₑ * rₑ - wₑᵢ * rᵢ + I, aₑ, θₑ))
-	end
-
-	@. function drᵢ(rₑ, rᵢ, wᵢₑ, wᵢᵢ, aᵢ, θᵢ; I=0) 
-		return (-rᵢ + sigmoid(wᵢₑ * rₑ - wᵢᵢ * rᵢ + I, aᵢ, θᵢ))
-	end
-	
-	function f!(x, params)		
-		rₑ, rᵢ = x
-		
-		de = drₑ(rₑ, rᵢ, params.wₑₑ, params.wₑᵢ, params.aₑ, 
-				 params.θₑ; I=params.Iₑ)/params.τₑ 
-		di = drᵢ(rₑ, rᵢ, params.wᵢₑ, params.wᵢᵢ, params.aᵢ, 
-				 params.θᵢ; I=params.Iᵢ)/params.τᵢ 
-		return (de, di)
-	end
-
-	function findFixedPoints(xGuess::Vector{Vector{Float64}},
-		func, params)
-
-		zeroArr = repeat([zeros(2)], length(xGuess))
-		for i in 1:length(xGuess)
-			zeroArr[i] = nlsolve(x -> func(x, params), 
-								xGuess[i], method=:newton).zero
-		end
-		return zeroArr
-	end
-end
-
 # ╔═╡ 5e49f283-5b85-4b04-ba04-cc47c9ebe17a
 guesses = [[0.0,0.0],[0.4,0.2],[0.9,0.6]]
 
 # ╔═╡ fe6b836d-3e5a-4aea-9de6-3c03edb2fe16
 begin 
-	fps = findFixedPoints(guesses, f!, params)
+	fps = findFixedPoints(guesses, fWC!, params)
 
 	pfp = plot(rₑNull, ncls[1], xlab="rₑ", ylab="rᵢ", 
 			label="E Nullcline", linewidth=2, legend=:outertopright)
@@ -357,31 +301,6 @@ The same applies to the inhibitory population.
 md"""
 ### Compute the Jacobian Matrix for the Wilson-Cowan Model
 """
-
-# ╔═╡ 89735de2-1276-4175-9d93-895b6ae0023a
-begin
-	function dSigmoid(x, a, θ)
-		return a * exp(-a * (x-θ)) * (1 + exp(-a * (x-θ)))^-2
-	end
-
-	function getJacobianEigenvalues(fixedPoints, params)
-		
-		eigenvals = []
-		
-		for i in 1:length(fixedPoints)
-			println(fixedPoints[i])
-			rₑ, rᵢ = fixedPoints[i]
-			J= zeros(2,2)
-	
-			J[1,1] = (-1 + params.wₑₑ * dSigmoid(params.wₑₑ * rₑ - params.wₑᵢ * rᵢ + params.Iₑ, params.aₑ, params.θₑ))/params.τₑ
-			J[2,1] = (-params.wₑᵢ * dSigmoid(params.wₑₑ * rₑ - params.wₑᵢ * rᵢ + params.Iₑ,params.aₑ, params.θₑ))/params.τₑ
-			J[1,2] = (params.wᵢₑ * dSigmoid(params.wᵢₑ * rₑ - params.wₑᵢ * rᵢ + params.Iᵢ,params.aᵢ, params.θᵢ))/params.τᵢ
-			J[2,2] = (-1 - params.wᵢᵢ * dSigmoid(params.wᵢₑ * rₑ - params.wᵢᵢ * rᵢ + params.Iᵢ, params.aᵢ, params.θᵢ))/params.τᵢ
-			push!(eigenvals, eigvals(J))
-		end
-		return eigenvals 
-	end
-end
 
 # ╔═╡ 0c0deb0a-6107-4a59-b889-ef3870cdb0a7
 getJacobianEigenvalues(fps, params)
@@ -468,7 +387,7 @@ We can also understand the oscillations of the population behavior using the pha
 
 # ╔═╡ 0f2f643c-d416-48f8-9145-a35b75c86522
 begin
-	fps2 = findFixedPoints([[0.5,0.5]], f!, params3)
+	fps2 = findFixedPoints([[0.5,0.5]], fWC!, params3)
 	ncls3 = getNullclines((rₑNull,rᵢNull), "WC", params3)
 	fields2 = getVectorFields(eiArr, "WC", params3)
 	
@@ -502,7 +421,7 @@ As you know, such a dramatic change in the system behavior is referred to as a *
 # ╔═╡ ea59b8f6-ea4d-435f-899a-df04d56b32e4
 begin
 	params4 = initializeModel(;wₑₑ=6.4, wₑᵢ=4.8, wᵢₑ=6.0, wᵢᵢ=1.2, Iₑ=0.8, τᵢ=tauI2)
-	fps3 = findFixedPoints([[0.5,0.5]], f!, params4)
+	fps3 = findFixedPoints([[0.5,0.5]], fWC!, params4)
 	ncls4 = getNullclines((rₑNull,rᵢNull), "WC", params4)
 	fields3 = getVectorFields(eiArr, "WC", params4)
 	rₑ8, rᵢ8 = simWilsonCowan(0:0.1:100, params4, (0.25,0.25))
@@ -657,13 +576,11 @@ Explore what happens when a second, brief current is applied to the inhibitory p
 # ╟─51e055d3-41a2-451c-84f4-c09dd1a62429
 # ╟─ac21c7c6-69ad-4975-af2b-7a0a4b44034f
 # ╟─8d312d7a-a0d4-402a-b72d-cc76acf3a738
-# ╟─0dffa5c8-f472-437a-99a3-784970e87ccf
 # ╠═5e49f283-5b85-4b04-ba04-cc47c9ebe17a
 # ╟─fe6b836d-3e5a-4aea-9de6-3c03edb2fe16
 # ╟─7e9da57f-d3d8-4a9b-9df0-9a645d02bf83
 # ╟─b9798208-9176-4543-a09a-05d57943d21f
-# ╟─89735de2-1276-4175-9d93-895b6ae0023a
-# ╟─0c0deb0a-6107-4a59-b889-ef3870cdb0a7
+# ╠═0c0deb0a-6107-4a59-b889-ef3870cdb0a7
 # ╟─14336933-2e28-445b-bba6-f2014f4fa37d
 # ╟─ae50a971-701c-4aff-b9dc-3cb25b0e287d
 # ╟─7684ade7-64ba-4419-aa89-4630f2fbd4a3
@@ -680,7 +597,7 @@ Explore what happens when a second, brief current is applied to the inhibitory p
 # ╟─29c0c0d7-4677-460e-9c6d-1987ae09327b
 # ╟─94f1efc8-e144-42ed-ba96-9cd85879c5cf
 # ╟─1f554429-1a41-48f9-beac-7d8ccb0854b7
-# ╠═cfa18de4-ea7e-4ab4-8867-ad7a72b19af8
+# ╟─cfa18de4-ea7e-4ab4-8867-ad7a72b19af8
 # ╟─01299142-99ad-43d3-ac33-041541c2d0ae
 # ╟─eaaf1701-ac8f-4d8b-ae2f-99e0aa4464c6
 # ╟─3ffb472e-5679-46e2-beb0-54af1e8b8ad8

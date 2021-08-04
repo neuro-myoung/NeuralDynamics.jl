@@ -13,3 +13,13 @@ end
 @. function iNullcline(rᵢ::Vector{Float64}, params)
 	return (params.wᵢᵢ * rᵢ + invSigmoid(rᵢ, params.aᵢ, params.θᵢ) - params.Iᵢ)/params.wᵢₑ
 end
+
+function fWC!(x, params)		
+    rₑ, rᵢ = x
+    
+    de = drₑ(rₑ, rᵢ, params.wₑₑ, params.wₑᵢ, params.aₑ, 
+             params.θₑ; I=params.Iₑ)/params.τₑ 
+    di = drᵢ(rₑ, rᵢ, params.wᵢₑ, params.wᵢᵢ, params.aᵢ, 
+             params.θᵢ; I=params.Iᵢ)/params.τᵢ 
+    return (de, di)
+end

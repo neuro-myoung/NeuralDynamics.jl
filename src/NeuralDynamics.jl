@@ -1,6 +1,7 @@
 module NeuralDynamics
 
-using Random, StatsBase, Statistics, DataFrames, Plots, StatsPlots, Parameters, Roots
+using Random, StatsBase, Statistics, DataFrames, Plots, StatsPlots, Parameters, Roots,
+NLsolve, LinearAlgebra
 
 include("ising2D.jl")
 include("bifurcationDiagrams.jl")
@@ -21,7 +22,8 @@ end
 export simulateIsing2D
 export bifurcationDiagram, addBifurcation!, plotField1D
 export rk1, rk2
-export plotNullclines, plotVectorFields!, FitzHughNagumo, neuronModel, findFixedPoints, simWilsonCowan, getVectorFields, getNullclines
-export sigmoid, invSigmoid
+export plotNullclines, plotVectorFields!, FitzHughNagumo, neuronModel, findFixedPoints, simWilsonCowan, getVectorFields, getNullclines,
+plotTrajectories!, plotTrajectory!, fWC!, getJacobianEigenvalues
+export sigmoid, invSigmoid, dSigmoid
 
 end

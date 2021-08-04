@@ -123,3 +123,54 @@ end
 function makeArrows(x, y, scale)
 	return (x,y) .* scale
 end
+
+function plotTrajectory!(x, y ;color=:red, label="")
+    plot!(x, y, linewidth=2, color=color, label=label)
+    scatter!([x[1]], [y[1]], color=color, markersize=10, markerstrokewidth=0, label=:none)
+end
+
+function plotTrajectories!(xArray, yArray, params;color=:gray, label="")
+    
+    for i in xArray
+        for j in yArray
+            rₑTemp, rᵢTemp = simWilsonCowan(0:0.1:50, params, (i,j))
+            
+            if i == minimum(xArray) && j == minimum(yArray)
+                plot!(rₑTemp, rᵢTemp, color=color, 
+                    label=label, alpha=0.8)
+            else
+                plot!(rₑTemp, rᵢTemp, color=color, 
+                    label=:none, alpha=0.8)
+            end
+        end
+    end
+end
+
+function findFixedPoints(xGuess::Vector{Vector{Float64}},
+    func, params)
+
+    zeroArr = repeat([zeros(2)], length(xGuess))
+    for i in 1:length(xGuess)
+        zeroArr[i] = nlsolve(x -> func(x, params), 
+                            xGuess[i], method=:newton).zero
+    end
+    return zeroArr
+end
+
+function getJacobianEigenvalues(fixedPoints, params)
+    
+    eigenvals = []
+    
+    for i in 1:length(fixedPoints)
+        println(fixedPoints[i])
+        rₑ, rᵢ = fixedPoints[i]
+        J= zeros(2,2)
+
+        J[1,1] = (-1 + params.wₑₑ * dSigmoid(params.wₑₑ * rₑ - params.wₑᵢ * rᵢ + params.Iₑ, params.aₑ, params.θₑ))/params.τₑ
+        J[2,1] = (-params.wₑᵢ * dSigmoid(params.wₑₑ * rₑ - params.wₑᵢ * rᵢ + params.Iₑ,params.aₑ, params.θₑ))/params.τₑ
+        J[1,2] = (params.wᵢₑ * dSigmoid(params.wᵢₑ * rₑ - params.wₑᵢ * rᵢ + params.Iᵢ,params.aᵢ, params.θᵢ))/params.τᵢ
+        J[2,2] = (-1 - params.wᵢᵢ * dSigmoid(params.wᵢₑ * rₑ - params.wᵢᵢ * rᵢ + params.Iᵢ, params.aᵢ, params.θᵢ))/params.τᵢ
+        push!(eigenvals, eigvals(J))
+    end
+    return eigenvals 
+end
