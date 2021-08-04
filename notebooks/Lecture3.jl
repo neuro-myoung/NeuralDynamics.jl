@@ -79,7 +79,22 @@ I: $(@bind Ia Slider(0:0.5:50, default=0, show_value=true))
 # ╔═╡ c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
 begin
 	uArr = -2.5:0.1:2.5
-	nrn1 = FitzHughNagumo(uArr; tau1=tau1a, tau2=tau2a, b0=b0a, b1=b1a, R=Ra, I=Ia)
+	
+	struct modelParameters
+		τ₁::Float64
+		τ₂::Float64
+		b₀::Float64
+		b₁::Float64
+		R::Float64
+	end
+	
+	function initializeModel(; τ₁=1.0, τ₂=2.0, b₀=0.9, b₁=1.1, R=1.0)
+		return modelParameters(τ₁, τ₂, b₀, b₁, R)
+	end
+	
+	params = initializeModel(τ₁=tau1a, τ₂=tau2a, b₀=b0a, b₁=b1a, R=Ra)
+	
+	nrn1 = FitzHughNagumo(uArr, params; I=Ia)
 	plotNullclines(nrn1; labels = ("u-nullcline","w-nullcline"), xlab="u", ylab="w",
 					colors=[:red, :blue])
 end
@@ -118,7 +133,8 @@ I: $(@bind Ib Slider(0:0.5:50, default=0, show_value=true))
 
 # ╔═╡ 350e9e4c-9b64-470d-aa2c-af68785e7f19
 begin
-	nrn2 = FitzHughNagumo(uArr; tau1=tau1b, tau2=tau2b, b0=b0b, b1=b1b, R=Rb, I=Ib)
+	params2 = initializeModel(τ₁=tau1b, τ₂=tau2b, b₀=b0b, b₁=b1b, R=Rb)
+	nrn2 = FitzHughNagumo(uArr, params2, I=Ib)
 	plotNullclines(nrn2; labels = ("u-nullcline","w-nullcline"), xlab="u", ylab="w",
 					colors=[:red, :blue])
 	plotVectorFields!(nrn2; color="teal")
