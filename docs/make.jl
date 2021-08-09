@@ -11,3 +11,7 @@ makedocs(
         "Function Documentation" => "functions.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/neuro-myoung/NeuralDynamics.jl.git",
+)
