@@ -1,9 +1,7 @@
 ![Logo](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/f435273fb0d36bc4386f58c749fdecad02427d35/assets/logo-dark.svg)
 
 [![Build Status](https://travis-ci.com/neuro-myoung/NeuralDynamics.jl.svg?branch=master)](https://travis-ci.com/neuro-myoung/NeuralDynamics.jl)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/neuro-myoung/NeuralDynamics.jl?svg=true)](https://ci.appveyor.com/project/neuro-myoung/NeuralDynamics-jl)
 [![Coverage](https://codecov.io/gh/neuro-myoung/NeuralDynamics.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/neuro-myoung/NeuralDynamics.jl)
-[![Coverage](https://coveralls.io/repos/github/neuro-myoung/NeuralDynamics.jl/badge.svg?branch=master)](https://coveralls.io/github/neuro-myoung/NeuralDynamics.jl?branch=master)
 
 ## Description
 A small Julia package developed for a neuronal bifurcations minicourse mostly geared towards creating custom plots and running numerical simulations. Credit for the original course and Python code upon which this is based goes to [@nalewkoz](https://github.com/nalewkoz).
