@@ -1,4 +1,4 @@
-![Logo](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/f435273fb0d36bc4386f58c749fdecad02427d35/assets/logo-dark.svg)
+![Logo](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/d85eb4d3c3d6f999808446bbb1e91f66f5292b42/assets/logo-both.svg)
 
 
 | **Documentation** | **Build Status** |
