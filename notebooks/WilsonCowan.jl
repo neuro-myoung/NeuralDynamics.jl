@@ -61,36 +61,11 @@ Note that this is a somehow simplified version of the original model: (a) it's a
 We will run a numerical simulation (implemented as a helper function) of our equations and visualize two simulations with similar initial points.
 """
 
-# ╔═╡ e259ec1e-b23e-4853-b213-2e7a1afa9e87
-begin
-	## Helper Functions
-	struct modelParameters
-		τₑ::Float64
-		aₑ::Float64
-		θₑ::Float64
-		τᵢ::Float64
-		aᵢ::Float64
-		θᵢ::Float64
-		wₑₑ::Float64
-		wₑᵢ::Float64
-		wᵢₑ::Float64
-		wᵢᵢ::Float64
-		Iₑ::Float64
-		Iᵢ::Float64
-	end
-	
-	function initializeModel(; τₑ=1.0, aₑ=1.2, θₑ=2.8, τᵢ=2.0, aᵢ=1.0, θᵢ=4.0, wₑₑ=9.0, wₑᵢ=4.0, wᵢₑ=13.0, wᵢᵢ=11.0, Iₑ=0.0, Iᵢ=0.0)
-		return modelParameters(τₑ, aₑ, θₑ, τᵢ, aᵢ, θᵢ, wₑₑ, wₑᵢ, wᵢₑ, wᵢᵢ, Iₑ, Iᵢ)
-	end
-	
-	
-end
-
 # ╔═╡ d186e7b6-8a13-4fa8-b2f9-9ae43a05567c
 begin
-	params=initializeModel()
-	rₑ1, rᵢ1 = simWilsonCowan(0:0.1:50, params, (0.32,0.15))
-	rₑ2, rᵢ2 = simWilsonCowan(0:0.1:50, params, (0.33,0.15))
+	params = initializeParams("WC")
+	rₑ1, rᵢ1 = simulate(0:0.1:50, "WC", params, (0.32,0.15))
+	rₑ2, rᵢ2 = simulate(0:0.1:50, "WC", params, (0.33,0.15))
 	
 	l1 = @layout [a; b]
 	
@@ -143,8 +118,8 @@ The first step is to implement the inverse transfer function.
 
 # ╔═╡ 38599e0e-e5e6-49e0-97f9-2bdf99b9b96e
 begin
-	x = collect(1e-6:0.001:0.93)
-	plot(x, invSigmoid(x, 1, 3), linewidth=2, legend=:false, xlab="x", ylab="F⁻¹(x)")
+	x1 = collect(1e-6:0.001:0.93)
+	plot(x1, invSigmoid.(x1, 1, 3), linewidth=2, legend=:false, xlab="x", ylab="F⁻¹(x)")
 end
 
 # ╔═╡ 7cdf7cc3-f2bc-45f7-905d-480ea45e89db
@@ -159,7 +134,8 @@ $r_E = \frac{1}{w_{IE}}[w_{II}r_I+F^{-1}_I(r_I;a_I,\theta_I)-I^{ext}_I]	\tag{5}$
 begin
 	rₑNull = collect(-0.01:0.001:0.96)
 	rᵢNull = collect(-0.01:0.001:0.8)
-	ncls = getNullclines((rₑNull,rᵢNull), "WC", params)
+	wc = modelEquations("WC")
+	ncls = getNullclines(rₑNull, rᵢNull, wc, params)
 	
 	plot(rₑNull, ncls[1], xlab="rₑ", ylab="rᵢ", label="E Nullcline", linewidth=2, legend=:topleft)
 	plot!(ncls[2], rᵢNull, label="I Nullcline", linewidth=2)
@@ -168,7 +144,7 @@ end
 
 # ╔═╡ b0fb05af-42c5-455e-83b4-7f82c9e77852
 md"""
-Note that by definition along the blue line in the phase plane spanned by $r_E$, $r_I$, $\frac{dr_E(t)}{dt}=0, therefore, it is called a nullcline.
+Note that by definition along the blue line in the phase plane spanned by $r_E$, $r_I$, $\frac{dr_E(t)}{dt}=0$, therefore, it is called a nullcline.
 
 That is, the blue nullcline divides the phase plane spanned by $r_E$, $r_I$ into two regions: on one side of the nullcline $\frac{dr_E(t)}{dt} > 0$ and on the other side $\frac{dr_E(t)}{dt} < 0$.
 
@@ -200,21 +176,21 @@ begin
 	
 	## Get fields
 	eiArr = 0:0.05:1
-	fields = getVectorFields(eiArr, "WC", params)
+	wc2 = modelEquations("WC")
+	fields = getVectorFields(eiArr, wc2, params, subdivisions=15)
 	
-	## Simulate
-	rₑ3, rᵢ3 = simWilsonCowan(0:0.1:50, params, (0.6,0.8))
-	rₑ4, rᵢ4 = simWilsonCowan(0:0.1:50, params, (0.6,0.6))
+	## Simulate with different initial conditions
+	rₑ3, rᵢ3 = simulate(0:0.1:50, "WC", params, (0.6,0.8))
+	rₑ4, rᵢ4 = simulate(0:0.1:50, "WC", params, (0.6,0.6))
 	
-		
 	sampleSpace = 0.0:0.2:1
 	
 	pWC = plot(rₑNull, ncls[1], xlab="rₑ", ylab="rᵢ", label="E Nullcline", 							linewidth=2, legend=:outertopright)
 	plot!(ncls[2], rᵢNull, label="I Nullcline", linewidth=2)
-	plotVectorFields!(eiArr, fields, color =:teal)
-	plotTrajectory!(rₑ3, rᵢ3, color=:orange, label="Sample trajectory: \nlow activity")
-	plotTrajectory!(rₑ4, rᵢ4, color=:purple, label="Sample trajectory: \nhigh activity")
-	plotTrajectories!(sampleSpace, sampleSpace, params, color=:gray, label="Sample Trajectories")
+	#plotVectorFields!(eiArr, fields, color =:teal, alpha=0.2)
+	#plotTrajectory!(rₑ3, rᵢ3, color=:orange, label="Sample trajectory: \nlow activity", markersize=10, linewidth=2, markerstrokewidth=0)
+	#plotTrajectory!(rₑ4, rᵢ4, color=:purple, label="Sample trajectory: \nhigh activity", markersize=10, linewidth=2, markerstrokewidth=0)
+	plotTrajectories!(0:0.1:50, sampleSpace, sampleSpace, "WC", params, color=:gray, label="Sample Trajectories", alpha=0.5)
 
 	pWC
 end
@@ -246,7 +222,7 @@ In this exercise, you will use the function ` insert here ` to find each of the 
 # ╔═╡ 5e49f283-5b85-4b04-ba04-cc47c9ebe17a
 guesses = [[0.0,0.0],[0.4,0.2],[0.9,0.6]]
 
-# ╔═╡ fe6b836d-3e5a-4aea-9de6-3c03edb2fe16
+# ╔═╡ 74252e9f-c81c-406e-a5fd-44eac9532bd9
 begin 
 	fps = findFixedPoints(guesses, fWC!, params)
 
@@ -333,22 +309,25 @@ wᵢₑ: $(@bind wIE Slider(0.0:0.1:15; default=13.0, show_value=true))
 
 # ╔═╡ ae50a971-701c-4aff-b9dc-3cb25b0e287d
 begin
-	params2 = initializeModel(; τₑ=tauE, τᵢ=tauI, wₑₑ=wEE, wₑᵢ=wEI, wᵢₑ=wIE, wᵢᵢ=wII, Iₑ=Ie)
+	params2 = initializeParams("WC"; tauE=tauE, tauI=tauI, wEE=wEE, wEI=wEI, wIE=wIE, wII=wII, IE=Ie)
 	
-	ncls2 = getNullclines((rₑNull,rᵢNull), "WC", params2)
-	rₑ5, rᵢ5 = simWilsonCowan(0:0.1:50, params2, (0.2,0.2))
-	rₑ6, rᵢ6 = simWilsonCowan(0:0.1:50, params2, (0.4,0.1))
+	ncls2 = getNullclines(rₑNull, rᵢNull, wc, params2)
+	rₑ5, rᵢ5 = simulate(0:0.1:50, "WC", params2, (0.2,0.2))
+	rₑ6, rᵢ6 = simulate(0:0.1:50, "WC", params2, (0.4,0.1))
+	fields7 = getVectorFields(eiArr, wc2, params2)
 	
 	lsub = @layout [a ; b]
 	louter = @layout [a b]
 
-	p3 = plot(rₑNull, ncls2[1], xlab="rₑ", ylab="rᵢ", label="E Nullcline", linewidth=2, legend=:topleft)
+	p3 = plot(rₑNull, ncls2[1], xlab="rₑ", ylab="rᵢ", label="E Nullcline", linewidth=2, legend=:topleft, ylims=(0,1))
 	plot!(ncls2[2], rᵢNull, label="I Nullcline", linewidth=2)
+	plotVectorFields!(eiArr, fields7, color =:teal, alpha=0.2)
+
 	
-	p4 = plot(0:0.1:50, rₑ5, label="E population", color=:blue, ylim=(0,1), legend=:bottomright)
+	p4 = plot(0:0.1:50, rₑ5, label="E population", color=:blue, ylim=(0,1), legend=:bottomright, ylab="activity")
 	plot!(0:0.1:50, rᵢ5, label="I population", color=:red) 
-	
-	p5 = plot(0:0.1:50, rₑ6, label="E population", color=:blue, ylim=(0,1), legend=:none)
+
+	p5 = plot(0:0.1:50, rₑ6, label="E population", color=:blue, ylim=(0,1), legend=:none, xlab="time (ms)", ylab="activity")
 	plot!(0:0.1:50, rᵢ6, label="I population", color=:red)
 	
 	psub = plot(p4, p5, layout=lsub)
@@ -372,9 +351,9 @@ For instance, if we use a different set of parameters, $w_{EE}=6.4$, $w_{EI}=4.8
 
 # ╔═╡ c8c09dd2-8e05-4a0f-ad4c-01b48c57fc90
 begin
-	params3 = initializeModel(;wₑₑ=6.4, wₑᵢ=4.8, wᵢₑ=6.0, wᵢᵢ=1.2, Iₑ=0.8)
-	rₑ7, rᵢ7 = simWilsonCowan(0:0.1:100, params3, (0.25,0.25))
-	p6 = plot(0:0.1:100, rₑ7, label="E population", color=:blue, ylim=(0,1))
+	params3 = initializeParams("WC";wEE=6.4, wEI=4.8, wIE=6.0, wII=1.2, IE=0.8)
+	rₑ7, rᵢ7 = simulate(0:0.1:100, "WC", params3, (0.25,0.25))
+	p6 = plot(0:0.1:100, rₑ7, label="E population", color=:blue, ylim=(0,1), xlab="Time (ms)", ylab="Activity")
 	plot!(0:0.1:100, rᵢ7, label="I population", color=:red) 
 end
 
@@ -388,8 +367,8 @@ We can also understand the oscillations of the population behavior using the pha
 # ╔═╡ 0f2f643c-d416-48f8-9145-a35b75c86522
 begin
 	fps2 = findFixedPoints([[0.5,0.5]], fWC!, params3)
-	ncls3 = getNullclines((rₑNull,rᵢNull), "WC", params3)
-	fields2 = getVectorFields(eiArr, "WC", params3)
+	ncls3 = getNullclines(rₑNull, rᵢNull, wc, params3)
+	fields2 = getVectorFields(eiArr, wc2, params3)
 	
 	dispVal2 = round.(fps2[1], digits=2)
 
@@ -399,8 +378,8 @@ begin
 	plot!(ncls3[2], rᵢNull, label="I Nullcline", linewidth=2)
 	scatter!([fps2[1][1]], [fps2[1][2]], color=:black, markersize=8, label=:none)
 	annotate!([fps2[1][1]], [fps2[1][2]+0.1], text("$dispVal2"))
-	plotVectorFields!(eiArr, fields2, color =:teal)
-	plotTrajectories!(sampleSpace2, sampleSpace2, params3, color=:gray, label="Sample Trajectories")
+	plotVectorFields!(eiArr, fields2, color =:teal, alpha=0.3)
+	plotTrajectories!(0:0.2:100, sampleSpace2, sampleSpace2, "WC", params3, color=:gray, label="Sample Trajectories")
 
 	pWC2
 end
@@ -414,17 +393,17 @@ From the above, examples, the change of model parameters changes the shape of th
 
 As you know, such a dramatic change in the system behavior is referred to as a **bifurcation**. What kind of bifurcation are we dealing with here?
 
-τᵢ: $(@bind tauI2 Slider(0.1:0.1:50; default=2.0, show_value=true))
+τᵢ: $(@bind tauI2 Slider(0.1:0.01:15; default=2.0, show_value=true))
 
 """
 
 # ╔═╡ ea59b8f6-ea4d-435f-899a-df04d56b32e4
 begin
-	params4 = initializeModel(;wₑₑ=6.4, wₑᵢ=4.8, wᵢₑ=6.0, wᵢᵢ=1.2, Iₑ=0.8, τᵢ=tauI2)
+	params4 = initializeParams("WC";wEE=6.4, wEI=4.8, wIE=6.0, wII=1.2, IE=0.8, tauI=tauI2)
 	fps3 = findFixedPoints([[0.5,0.5]], fWC!, params4)
-	ncls4 = getNullclines((rₑNull,rᵢNull), "WC", params4)
-	fields3 = getVectorFields(eiArr, "WC", params4)
-	rₑ8, rᵢ8 = simWilsonCowan(0:0.1:100, params4, (0.25,0.25))
+	ncls4 = getNullclines(rₑNull, rᵢNull, wc, params4)
+	fields3 = getVectorFields(eiArr, wc2, params4)
+	rₑ8, rᵢ8 = simulate(0:0.1:100, "WC", params4, (0.25,0.25))
 	
 	
 	l3 = @layout [a b]
@@ -432,9 +411,9 @@ begin
 	pWC3 = plot(rₑNull, ncls4[1], xlab="rₑ", ylab="rᵢ", label="E Nullcline", 							linewidth=2, legend=:none, title="τᵢ=$tauI2"*" ms")
 	plot!(ncls4[2], rᵢNull, label="I Nullcline", linewidth=2)
 	scatter!([fps3[1][1]], [fps3[1][2]], color=:black, markersize=8, label=:none)
-	plotVectorFields!(eiArr, fields3, color =:teal)
+	plotVectorFields!(eiArr, fields3, color =:teal, alpha=0.3)
 	plotTrajectory!(rₑ8, rᵢ8, color=:black)
-	plotTrajectories!(sampleSpace2, sampleSpace2, params4, color=:gray, label="Sample Trajectories")
+	plotTrajectories!(0:0.1:100, sampleSpace2, sampleSpace2, "WC", params4, color=:gray, label="Sample Trajectories", alpha=0.5)
 	
 	pWC3Activity = plot(0:0.1:100, rₑ8, label="E population", color=:blue, ylim=(0,1))
 	plot!(0:0.1:100, rᵢ8, label="I population", color=:red) 
@@ -455,38 +434,12 @@ Both $\tau_E$ and $\tau_I$ feature in the Jacobian of the two population network
 md"""
 ## Fixed points and working memory
 
-The input into the neurons was measured in vivo is often noisy (what is the source of noise?). Here, the noisy synaptic input current is modeled as an Ornstein-Uhlenbeck (OU) process, which has been discussed several times in the previous tutorials.
+The input into the neurons measured in vivo is often noisy (what is the source of noise?). Here, the noisy synaptic input current is modeled as an Ornstein-Uhlenbeck (OU) process, which has been discussed several times in the previous tutorials.
 """
-
-# ╔═╡ 29c0c0d7-4677-460e-9c6d-1987ae09327b
-function OrnsteinUhlenbeck(tArray, params, signal; seed=nothing)
-	if seed != nothing
-		Random.seed!(seed)
-	else
-		Random.seed!()
-	end
-	
-	dt = tArray[2]-tArray[1]
-
-	noise = randn(length(tArray))
-	I = zeros(length(noise))
-	I[1] = noise[1] * signal
-	
-	for i in 2:length(I)-1
-		I[i+1] = I[i] + dt/params.τ * (0. - I[i]) + sqrt(2 * dt/params.τ) * signal * noise[i+1]
-	end
-
-	return I
-end
 
 # ╔═╡ 94f1efc8-e144-42ed-ba96-9cd85879c5cf
 begin
-	struct OUModelParams
-		τ::Float64
-	end
-	
-	params5 = OUModelParams(1.)
-	Iₒᵤ = OrnsteinUhlenbeck(0.1:0.1:50, params5, 0.1)
+	Iₒᵤ = OrnsteinUhlenbeck(0.1:0.1:50, 1., 0.1)
 	plot(collect(0.1:0.1:50), Iₒᵤ, legend=:none, ylab="Iₒᵤ", xlab="Time (ms)")
 
 end
@@ -499,10 +452,12 @@ With the default parameters, the system fluctuates around a resting state with t
 
 # ╔═╡ cfa18de4-ea7e-4ab4-8867-ad7a72b19af8
 begin
-	Ie2 = OrnsteinUhlenbeck(collect(0:0.1:100), params5, 0.1, seed=2022)
-	Ii2 = OrnsteinUhlenbeck(collect(0:0.1:100), params5, 0.1, seed=2021)
+	Ie2 = OrnsteinUhlenbeck(collect(0:0.1:100), 1, 0.1, seed=2022)
+	Ii2 = OrnsteinUhlenbeck(collect(0:0.1:100), 1, 0.1, seed=2021)
 	
-	rE, rI = simWilsonCowan(0:0.1:100, params4, (0.1,0.1), Ie=Ie2, Ii=Ii2)
+	params5 = initializeParams("WC", input=[Ie2, Ii2] ;wEE=6.4, wEI=4.8, wIE=6.0, wII=1.2, tauI=tauI2)
+	
+	rE, rI = simulate(0:0.1:100, "WC", params5, (0.1,0.1))
 	plot(collect(0:0.1:100), rE, color=:blue, linewidth=2, label="E Population", 
 		ylab="Activity", xlab="Time (ms)")
 	plot!(collect(0:0.1:100), rI, color=:red, linewidth=2, label="I Population")
@@ -539,10 +494,12 @@ begin
 	stim2 = squarePulse(tArray, start2)
 	stimLoc = start1:1:start1+10
 	stim2Loc = start2:1:start1+10
-	Ie3 = OrnsteinUhlenbeck(collect(tArray), params5, 0.1, seed=2021)
+	Ie3 = OrnsteinUhlenbeck(collect(tArray), 1, 0.1, seed=2021)
 	pulse = sum(stim)
 	
-	rE2, rI2 = simWilsonCowan(0:0.1:100, params, (0.1,0.1), Ie=Ie3+stim*SE, Ii=Ie3+stim2*SI)
+	params6 = initializeParams("WC", input=[Ie3+stim*SE, Ie3+stim2*SI])
+	
+	rE2, rI2 = simulate(0:0.1:100, "WC", params6, (0.1,0.1))
 	
 	plot(collect(tArray), rE2, color=:blue, linewidth=2, label="E Population", ylab="Activity", xlab="Time (ms)",
 	ylims=(0,1.3))
@@ -565,19 +522,18 @@ Explore what happens when a second, brief current is applied to the inhibitory p
 # ╟─69d62570-ad5c-46c2-99c8-645f4b124ddf
 # ╠═f7741ca8-f1e3-4212-98bb-3bc2f0b94694
 # ╟─ef0815fe-f3ca-11eb-3a7d-39fd9d59783c
-# ╟─ffaaca75-8d90-4278-843b-39854408e326
-# ╟─e259ec1e-b23e-4853-b213-2e7a1afa9e87
+# ╠═ffaaca75-8d90-4278-843b-39854408e326
 # ╟─d186e7b6-8a13-4fa8-b2f9-9ae43a05567c
 # ╟─797e6ee8-3a97-41fb-851d-bd2e60c44b4f
 # ╟─38599e0e-e5e6-49e0-97f9-2bdf99b9b96e
 # ╟─7cdf7cc3-f2bc-45f7-905d-480ea45e89db
-# ╟─dce5dd3f-6ab8-4a05-b179-bfa87e6c0386
+# ╠═dce5dd3f-6ab8-4a05-b179-bfa87e6c0386
 # ╟─b0fb05af-42c5-455e-83b4-7f82c9e77852
 # ╟─51e055d3-41a2-451c-84f4-c09dd1a62429
-# ╟─ac21c7c6-69ad-4975-af2b-7a0a4b44034f
+# ╠═ac21c7c6-69ad-4975-af2b-7a0a4b44034f
 # ╟─8d312d7a-a0d4-402a-b72d-cc76acf3a738
 # ╠═5e49f283-5b85-4b04-ba04-cc47c9ebe17a
-# ╟─fe6b836d-3e5a-4aea-9de6-3c03edb2fe16
+# ╠═74252e9f-c81c-406e-a5fd-44eac9532bd9
 # ╟─7e9da57f-d3d8-4a9b-9df0-9a645d02bf83
 # ╟─b9798208-9176-4543-a09a-05d57943d21f
 # ╠═0c0deb0a-6107-4a59-b889-ef3870cdb0a7
@@ -585,19 +541,18 @@ Explore what happens when a second, brief current is applied to the inhibitory p
 # ╟─ae50a971-701c-4aff-b9dc-3cb25b0e287d
 # ╟─7684ade7-64ba-4419-aa89-4630f2fbd4a3
 # ╟─5a7199ab-a05d-489d-9498-7223f0359612
-# ╟─c8c09dd2-8e05-4a0f-ad4c-01b48c57fc90
+# ╠═c8c09dd2-8e05-4a0f-ad4c-01b48c57fc90
 # ╟─463dffc2-18e8-46cb-ad12-caa5f3d74802
 # ╟─0f2f643c-d416-48f8-9145-a35b75c86522
-# ╠═e51502d7-dcb6-4702-b432-f80c3a2ad46d
+# ╟─e51502d7-dcb6-4702-b432-f80c3a2ad46d
 # ╟─cb86a731-fe33-49f6-a45f-15df6e775a82
 # ╟─ea59b8f6-ea4d-435f-899a-df04d56b32e4
 # ╟─4c897322-9582-4066-8960-9c585e560005
 # ╟─55014f6a-aaf7-40f1-aa2c-6d1faed25f2b
 # ╟─a50eb8d2-dc17-4fa3-a287-9f5912b854f1
-# ╟─29c0c0d7-4677-460e-9c6d-1987ae09327b
 # ╟─94f1efc8-e144-42ed-ba96-9cd85879c5cf
 # ╟─1f554429-1a41-48f9-beac-7d8ccb0854b7
-# ╟─cfa18de4-ea7e-4ab4-8867-ad7a72b19af8
+# ╠═cfa18de4-ea7e-4ab4-8867-ad7a72b19af8
 # ╟─01299142-99ad-43d3-ac33-041541c2d0ae
 # ╟─eaaf1701-ac8f-4d8b-ae2f-99e0aa4464c6
 # ╟─3ffb472e-5679-46e2-beb0-54af1e8b8ad8

@@ -17,7 +17,7 @@ end
 begin
 	import Pkg
 	Pkg.activate("../environments/v1.6")
-	using Plots, PlutoUI, NeuralDynamics, Statistics, Parameters
+	using Plots, PlutoUI, NeuralDynamics
 	TableOfContents()
 end
 
@@ -30,7 +30,7 @@ The Hodgkin-Huxley(HH) model is not easy to analyze, especially without simulati
 $\tau \dot{u} = F(u,w) + RI$
 $\tau_{w} \dot{w} = G(u,w)$
 
-where $u$, $I$, and $R$ denote the membrane voltage, input current, and resistane. We also have some general (unknown at the moment) functions $F$ and $G$. $w$ is known as a 'recovery variable'. It summarizes the dynamics of three gating variables describing the dynamics of sodium and potassium channels in the HH model.
+where $u$, $I$, and $R$ denote the membrane voltage, input current, and resistance. We also have some general (unknown at the moment) functions $F$ and $G$. $w$ is known as a 'recovery variable'. It summarizes the dynamics of three gating variables describing the dynamics of sodium and potassium channels in the HH model.
 
 Importantly $\tau_{w} >> \tau$, i.e., the dynamics of the recovery variable is slow compared to the dynamics of the voltage. This is part of the reason why leaky integrate-and-fire models work pretty well.
 
@@ -78,25 +78,19 @@ I: $(@bind Ia Slider(0:0.5:50, default=0, show_value=true))
 
 # ╔═╡ c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
 begin
+	
 	uArr = -2.5:0.1:2.5
 	
-	struct modelParameters
-		τ₁::Float64
-		τ₂::Float64
-		b₀::Float64
-		b₁::Float64
-		R::Float64
-	end
+	params = initializeParams("FHN", tau1=tau1a, tau2=tau2a, b0=b0a, b1=b1a, 
+		R=Ra, I=Ia)
 	
-	function initializeModel(; τ₁=1.0, τ₂=2.0, b₀=0.9, b₁=1.1, R=1.0)
-		return modelParameters(τ₁, τ₂, b₀, b₁, R)
-	end
+	fhn = modelEquations("FHN")
 	
-	params = initializeModel(τ₁=tau1a, τ₂=tau2a, b₀=b0a, b₁=b1a, R=Ra)
+	ncls = getNullclines(uArr, fhn, params)
 	
-	nrn1 = FitzHughNagumo(uArr, params; I=Ia)
-	plotNullclines(nrn1; labels = ("u-nullcline","w-nullcline"), xlab="u", ylab="w",
-					colors=[:red, :blue])
+	plot(uArr, ncls[1], label = "u-nullcline", xlab="u", ylab="w", linewidth=2, color=:blue)
+	plot!(uArr, ncls[2], label = "w-nullcline", linewidth=2, color=:red)
+
 end
 
 # ╔═╡ 2a6a73e3-780a-4a11-9711-2b243f39f6e2
@@ -133,11 +127,17 @@ I: $(@bind Ib Slider(0:0.5:50, default=0, show_value=true))
 
 # ╔═╡ 350e9e4c-9b64-470d-aa2c-af68785e7f19
 begin
-	params2 = initializeModel(τ₁=tau1b, τ₂=tau2b, b₀=b0b, b₁=b1b, R=Rb)
-	nrn2 = FitzHughNagumo(uArr, params2, I=Ib)
-	plotNullclines(nrn2; labels = ("u-nullcline","w-nullcline"), xlab="u", ylab="w",
-					colors=[:red, :blue])
-	plotVectorFields!(nrn2; color="teal")
+	params2 = initializeParams("FHN", tau1=tau1b, tau2=tau2b, b0=b0b, b1=b1b, R=Rb,
+		I=Ib)
+	ncls2 = getNullclines(uArr, fhn, params2)
+	fields = getVectorFields(-2.5:0.1:2.5, fhn, params2, subdivisions=20)
+	
+	p1 = plot(uArr, ncls2[1], label = "u-nullcline", xlab="u", ylab="w", linewidth=2, color=:blue, ylim=(-2.5, 2.5))
+	plot!(uArr, ncls2[2], label = "w-nullcline", linewidth=2, color=:red)
+	plotVectorFields!(uArr, fields; color="teal", alpha=0.2)
+	plotTrajectories!(0:0.1:50, -2.5:1:2.5, -2.5:1:2.5, "FHN", params2,
+		color=:gray, alpha=0.5)
+	p1
 end
 
 # ╔═╡ Cell order:
@@ -147,4 +147,4 @@ end
 # ╟─c2409c82-fdfd-4d4e-bc1d-4c8ff70e6a2f
 # ╟─2a6a73e3-780a-4a11-9711-2b243f39f6e2
 # ╟─740a25ad-7fcf-4404-a572-c4d6b3a5a749
-# ╠═350e9e4c-9b64-470d-aa2c-af68785e7f19
+# ╟─350e9e4c-9b64-470d-aa2c-af68785e7f19

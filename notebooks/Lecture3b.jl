@@ -17,33 +17,18 @@ end
 begin
 	import Pkg
 	Pkg.activate("../environments/v1.6")
-	using Plots, PlutoUI, NeuralDynamics, Roots
+	using Plots, PlutoUI, NeuralDynamics, NLsolve
 	TableOfContents()
 end
 
 # ╔═╡ dfdde882-6871-47ea-a935-c33f3794f7c1
 md"# Population Dynamics"
 
-# ╔═╡ fc76de79-f324-475d-8ff2-515871f27436
-## Helper Functions
-begin
-	struct modelParameters
-		a::Float64
-		θ::Float64
-		τ::Float64
-		w::Float64
-	end
-	
-	function initializeModel(; a=1.2, θ=2.8, τ=1.0, w=0.0)
-		return modelParameters(a, θ, τ, w)
-	end
-end
-
 # ╔═╡ 60d66ee0-f393-11eb-0f70-214941234e7c
 md"""
 ## Dynamics of a single feed-forward population
 
-Individual neurons respond by spiking. When we average teh spikes of neurons in a population, we can define the average firing activity of the population. In this model, we are interested in how the population-averaged firing varies as a function of time and network parameters. Mathematically, we can describe the firing rate dynamic of a feed-forward network as:
+Individual neurons respond by spiking. When we average the spikes of neurons in a population, we can define the average firing activity of the population. In this model, we are interested in how the population-averaged firing varies as a function of time and network parameters. Mathematically, we can describe the firing rate dynamic of a feed-forward network as:
 
 $\tau \frac{dr}{dt} = -r + F(I_{ext})$
 
@@ -80,10 +65,12 @@ a = $(@bind a1 Slider(0.1:0.1:10; default=1.2, show_value=true))
 # ╔═╡ a24ea7a9-da14-400e-b66d-110157a4968e
 begin	
 	x = 1:0.1:10
-	params1 = initializeModel(a=a1, θ=θ1)
-	f = sigmoid(x, params1)
+	params1 = initializeParams("SFF", a=a1, theta=θ1)
+	WC = modelEquations("WC")
+	f = sigmoid.(x, params1[:a], params1[:theta])
 	plot(x, f, ylim=(0,1), color=:black, xlab="x (au)", ylab="F(x)", legend=false,
 		linewidth=2, grid=false)
+	
 end
 
 # ╔═╡ f96c5b37-4994-44e7-a29e-e8ebcd2dbb75
@@ -103,7 +90,7 @@ Note that, $r_{ana}(t)$ denotes the analytical solution. We do not learn how to 
 
  $τ$ = $(@bind τ1 Slider(0.1:0.1:10; default=1, show_value=true))
 
- $I_{ext}$ = $(@bind Iₑ1 Slider(0:1:20; default=0, show_value=true))
+ $I_{ext}$ = $(@bind Iₑ1 Slider(0:0.1:10; default=0, show_value=true))
 
  $r_{0}$ = $(@bind r₀1 Slider(0:0.1:10; default=0.2, show_value=true))
 
@@ -111,19 +98,16 @@ Note that, $r_{ana}(t)$ denotes the analytical solution. We do not learn how to 
 
 # ╔═╡ 1b52e7f5-cd9e-4a85-a1df-02ad7c5cf426
 begin
-	function dr(r, params; Iₑ=0)
-		return -r + sigmoid(params.w * r + Iₑ, params)
-	end
-	println(τ1)
-	params2 = initializeModel(τ = τ1)	
-	r_sim = rk1(dr, 0, 0.1, 200, params2, r₀1, Iₑ=Iₑ1)
-	Fᵢ = sigmoid(Iₑ1 .* ones(length(r_sim.t)), params2)
-	r_ana = r₀1 .+ (Fᵢ .- r₀1) .* (1 .- exp.(-r_sim.t ./ params2.τ))
+	params2 = initializeParams("SFF", tau = τ1, I=Iₑ1)
 	
-	plot(r_sim.t, r_sim.x, color=:black, xlab="t (ms)", ylab="Activity r(t)",
-		linewidth=2, grid=false, label="rₛᵢₘ")
-	plot!(r_sim.t, r_ana, color=:blue, linestyle=:dash, linewidth=2, label="rₐₙₐ")
-	plot!(r_sim.t, Fᵢ, color=:red, linestyle=:dash, linewidth=2, label="Fₑₓₜ")
+	r_sim = simulate(0:0.1:100, "SFF", params2, r₀1)
+	Fᵢ = sigmoid.(Iₑ1 .* ones(length(r_sim)), params2[:a], params2[:theta])
+	r_ana = r₀1 .+ (Fᵢ .- r₀1) .* (1 .- exp.(-(0:0.1:100) ./ params2[:tau]))
+	
+	plot(0:0.1:100, r_sim, color=:black, xlab="t (ms)", ylab="Activity r(t)",
+		linewidth=2, grid=false, label="rₛᵢₘ", ylim=(0,1))
+	plot!(0:0.1:100, r_ana, color=:blue, linestyle=:dash, linewidth=2, label="rₐₙₐ")
+	plot!(0:0.1:100, Fᵢ, color=:red, linestyle=:dash, linewidth=2, label="Fₑₓₜ")
 end
 
 # ╔═╡ 5b73a10b-7bb0-47a0-9728-313efabc7045
@@ -154,14 +138,14 @@ Let us use the techniques that we have developed in the past two weeks. As you s
 
 # ╔═╡ 26cc2b71-855b-4162-951d-4ba25d9ea88a
 begin
-	function drₑdt(rₑ, params; Iₑ=0) 
-		return (-rₑ + sigmoid(params.w .* rₑ .+ Iₑ, params))/params.τ
+	function drdt(x, w, I, a, theta, tau) 
+		return (-x + sigmoid(w * x + I, a, theta))/tau
 	end
 	
 	r = 0:0.001:1
-	params3 = initializeModel(w=5)
+	params3 = initializeParams("SFF", w=5.0, I=0.3)
 	
-	dr2 = drₑdt(r,params3, Iₑ=0.3)
+	dr2 = drdt.(r,params3[:w], params3[:I], params3[:a], params3[:theta], params3[:tau])
 	
 	plot(r, dr2, xlim=(0,1), color=:black, legend=false, xlab="rₑ", ylab="drₑ/dt")
 	hline!([0], color=:black, linestyle=:dash)
@@ -182,27 +166,23 @@ The next cell defines a helper function that we will use:
 
 # ╔═╡ 1cff1311-dece-46eb-b7e6-91619863d7b7
 begin
-	function findFixedPoints(xGuess::Float64, func; 
-		params::modelParameters, Iₑ=0)
-		return find_zero(x -> func(x, params; Iₑ=Iₑ), xGuess)
-	end
+	function findFixedPoints(xGuess::Vector, func, params)
 
-	function findFixedPoints(xGuess::Vector{Float64}, func; 
-		params::modelParameters, Iₑ=0)
+    zeroArr = repeat([zeros(2)], length(xGuess))
+    for i in 1:length(xGuess)
+        zeroArr[i] = nlsolve(x -> func(x, params), 
+                            xGuess[i], method=:newton).zero
+    end
+    return zeroArr
+end
 
-		zeroArr = zeros(length(xGuess))
-		for i in 1:length(xGuess)
-			zeroArr[i] = find_zero(x -> func(x, params; Iₑ=Iₑ), xGuess[i])
-		end
-		return zeroArr
-	end
-
-	xGuesses=collect(0.0:0.1:1.0);
+	xGuesses= [0.6, 0.1, 0.8];
+	println(nlsolve(x -> drdt(x, params3[:w], params3[:I], params3[:a], params3[:theta], params3[:tau]), xGuesses[1], method=:newton).zero)
 end;
 
 # ╔═╡ 44d0770d-53fa-4e24-9b28-d7182c6a3504
 begin
-	fixedPoints = findFixedPoints(xGuesses, drₑdt, params=params3, Iₑ=0.3)
+	fixedPoints = findFixedPoints(xGuesses, drdt, params3)
 	
 	plot(r, dr2, xlim=(0,1), color=:black, legend=false, xlab="rₑ", ylab="drₑ/dt")
 	hline!([0], color=:black, linestyle=:dash)
@@ -272,18 +252,17 @@ We have three fixed points but only two steady states with a finite basin of att
 # ╔═╡ Cell order:
 # ╟─dfdde882-6871-47ea-a935-c33f3794f7c1
 # ╠═743f4cc6-6bd2-491e-8a64-5947554bc839
-# ╠═fc76de79-f324-475d-8ff2-515871f27436
 # ╟─60d66ee0-f393-11eb-0f70-214941234e7c
-# ╟─47e70f44-4c85-411b-8547-6afd4c0ca655
+# ╠═47e70f44-4c85-411b-8547-6afd4c0ca655
 # ╟─a9d0dec1-8591-4977-b315-fa55fc4b278c
-# ╟─a24ea7a9-da14-400e-b66d-110157a4968e
+# ╠═a24ea7a9-da14-400e-b66d-110157a4968e
 # ╟─f96c5b37-4994-44e7-a29e-e8ebcd2dbb75
 # ╟─1b52e7f5-cd9e-4a85-a1df-02ad7c5cf426
 # ╟─5b73a10b-7bb0-47a0-9728-313efabc7045
-# ╟─c8aed09f-fe0b-4335-960d-c72591fb9d8f
-# ╟─26cc2b71-855b-4162-951d-4ba25d9ea88a
+# ╠═c8aed09f-fe0b-4335-960d-c72591fb9d8f
+# ╠═26cc2b71-855b-4162-951d-4ba25d9ea88a
 # ╟─bc55f0f2-b7af-4204-91dc-605e7e27aef2
-# ╟─1cff1311-dece-46eb-b7e6-91619863d7b7
+# ╠═1cff1311-dece-46eb-b7e6-91619863d7b7
 # ╟─44d0770d-53fa-4e24-9b28-d7182c6a3504
 # ╟─a6bf8851-86b9-4579-81f4-f3ac7d266bfb
 # ╟─2570bd70-4fc9-4c78-af62-53757cad1e74

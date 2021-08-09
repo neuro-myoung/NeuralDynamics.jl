@@ -1,29 +1,20 @@
 module NeuralDynamics
 
-using Random, StatsBase, Statistics, DataFrames, Plots, StatsPlots, Parameters, Roots,
-NLsolve, LinearAlgebra
+using StatsBase, Plots, NLsolve, LinearAlgebra, Random
 
-include("ising2D.jl")
-include("bifurcationDiagrams.jl")
-include("plotFields.jl")
-include("rungeKatta.jl")
+include("phaseAnalysis.jl")
 include("FitzHughNagumo.jl")
-include("neuronModels.jl")
-include("activationFunctions.jl")
+include("SimpleFeedforward.jl")
 include("WilsonCowan.jl")
+include("OrnsteinUhlenbeck.jl")
+include("modelingTools.jl")
+include("plottingFunctions.jl")
+include("activationFunctions.jl")
 
-@with_kw struct neuronModel
-    u::Vector{Float64}
-    params
-    nullclines::Tuple{Vector{Float64}, Vector{Float64}}
-    vectorField::Tuple{Matrix{Float64}, Matrix{Float64}}
-end
-
-export simulateIsing2D
-export bifurcationDiagram, addBifurcation!, plotField1D
-export rk1, rk2
-export plotNullclines, plotVectorFields!, FitzHughNagumo, neuronModel, findFixedPoints, simWilsonCowan, getVectorFields, getNullclines,
-plotTrajectories!, plotTrajectory!, fWC!, getJacobianEigenvalues
+export initializeParams, getVectorFields, getNullclines , simulate, modelEquations, findFixedPoints, getJacobianEigenvalues
+export plotVectorFields!, plotTrajectory!, plotTrajectories!
 export sigmoid, invSigmoid, dSigmoid
+export fWC!
+export OrnsteinUhlenbeck
 
 end
