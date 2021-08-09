@@ -1,4 +1,4 @@
-# NeuralDynamics
+![Logo](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/f435273fb0d36bc4386f58c749fdecad02427d35/assets/logo-dark.svg)
 
 [![Build Status](https://travis-ci.com/neuro-myoung/NeuralDynamics.jl.svg?branch=master)](https://travis-ci.com/neuro-myoung/NeuralDynamics.jl)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/neuro-myoung/NeuralDynamics.jl?svg=true)](https://ci.appveyor.com/project/neuro-myoung/NeuralDynamics-jl)
@@ -14,31 +14,34 @@ Before you begin make sure you have Julia v1.6 or higher (Tests were not yet dev
 
 ## Installation
 
+From the Julia package REPL type 
 ```
-git clone https://github.com/neuro-myoung/NeuralDynamics.jl.git
+] add NeuralDynamics
 ```
-
-Then be sure to add the package contents to your development environment. From the package manager type the following.
-
+or you can install using Pkg by typing
 ```
-]dev NeuralDynamics
+julia> using Pkg
+julia> Pkg.add("NeuralDynamics")
 ```
 Then you will be able to import the package as with any other Julia package
 ```
 using NeuralDynamics
 ```
 
-## Examples
-**Documentation** to come...
-For now here are some examples of plots made with this package:
+## Functionality
 
-### Analyzing Bifurcations
+### Simulate Neurons or networks of neurons
 
-Detailed examples with interactive plotting available in the Pluto notebook.
+Build neuron or network models and study them in the phase plane or simulate their activity.
 
-ODEs with Vector Fields             |  Bifurcation Diagrams
-:-------------------------:|:-------------------------:
-![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/f9b9d48dbe679c9e99e6ddc4023e7230a40fa57e/assets/difEqs.svg) | ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/f9b9d48dbe679c9e99e6ddc4023e7230a40fa57e/assets/bifurcationPlots.svg)
+Currently implemented models:
+- FitzHughNagumo
+- WilsonCowan
+- Simple Feedforward
+
+Build your own custom models and analyze them!
+
+![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/f435273fb0d36bc4386f58c749fdecad02427d35/assets/wc_sim3.png)
 
 ### Ising Simulation
 ```
@@ -62,21 +65,7 @@ Simulation Results             |  Simulation Animation
 :-------------------------:|:-------------------------:
 ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/Ising1.png) | ![](https://raw.githubusercontent.com/neuro-myoung/NeuralDynamics.jl/master/assets/anim_fps15.gif)
 
-### Simulate Neurons or networks of neurons
-
-Build neuron or network models and study them in the phase plane or simulate their activity.
-
-Currently, only two models are implemented:
-- FitzHughNagumo
-- WilsonCowan
-
-#### FitzHughNagumo Phase Plane
-![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/6042a30b1e5d905dc830c2fd47834dfe63574396/assets/fhn_phaseplane.svg)
-
-#### Wilson-Cowan Model
-Phase Plane             |  Simulation
-:-------------------------:|:-------------------------:
-![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/6042a30b1e5d905dc830c2fd47834dfe63574396/assets/wilsoncowan_phase.png) | ![](https://github.com/neuro-myoung/NeuralDynamics.jl/blob/6042a30b1e5d905dc830c2fd47834dfe63574396/assets/wilsoncowan_activity.svg)
+You can find interactive Pluto notebooks in the notebook folder.
 
 ## Contributing
 To contribute to **NeuralDynamics.jl**, follow these steps:
